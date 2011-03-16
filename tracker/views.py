@@ -32,7 +32,7 @@ def get_stats(request):
 
     return HttpResponse(cjson.encode(stat_list))
 
-@staff_memeber_required
+@staff_member_required
 def monthly(request):
     month = int(request.GET.get('month', False))
     year = int(request.GET.get('year', False))
