@@ -39,3 +39,19 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'tracker',
 )
+COUNTRY_PROFILES = (('cn', 'China'),
+ ('fr', 'France'),
+ ('de', 'Germany'),
+ ('mx', 'Mexico'),
+ ('me', 'Montenegro'),
+ ('ae', 'Middle East'),
+ ('no', 'Norway'),
+ ('pl', 'Poland'),
+ ('ru', 'Russia'),
+ ('es', 'Spain'),
+ ('us', 'International English'),
+ ('id', 'Indonesia'),
+ ('vn', 'Vietnam'),
+ ('br', 'Brazil'),
+ ('jp', 'Japan'))
+

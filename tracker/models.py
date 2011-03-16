@@ -5,6 +5,7 @@ from django.core.cache import cache
 import datetime
 import re
 
+from django.db.models import Sum
 TTL = 300 # 5 minutes
 COLLECT_TIME = 120 # every 2 minutes
 
@@ -111,3 +112,22 @@ def make_daily_report():
         s.save()
 
 
+def make_monthly_report_country(category='links', month=None, year=None,
+        countries = [x[0] for x in settings.COUNTRY_PROFILES]):
+    """ Counts for the month all the labels like country_domain
+        category: the category to filter.
+    """
+    today = datetime.datetime.today()
+    s = Statistic.objects.filter(category=category)
+    queries = s.filter(day__month=month or today.month, day__year=year or today.year)
+    report =  {}
+    for country in countries:
+        country_q = queries.filter(label__startswith=country + '_')
+        sites = dict((obj['label'].split('_')[1], 0) for obj in country_q.values('label'))
+        for site in sites.keys():
+            # Sum all days
+            sites[site] = country_q.filter(label__iregex=r'%s_%s' % (country,
+                site)).aggregate(Sum('counter'))['counter__sum']
+        report[country] = sites
+        
+    return report

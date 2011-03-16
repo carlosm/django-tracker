@@ -1,0 +1,6 @@
+{% for country in report.iteritems %}
+    <p> Sites for country {{ country.0 }} </p>
+    {% for site in country.1.iteritems %}
+        <p>{{ site.0 }} {{ site.1 }}</p>
+    {% endfor %}
+{% endfor %}

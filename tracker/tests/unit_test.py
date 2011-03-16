@@ -2,6 +2,7 @@ import django
 from django.conf import settings
 from tracker.models import parse_query, Tracker
 from tracker.models import Statistic, make_daily_report
+from tracker.models import make_monthly_report_country
 from django.test import TestCase
 
 import datetime
@@ -71,3 +72,34 @@ class UnitTestCase(TestCase):
         self.assertEqual(stat.counter, 4)
 
         tracker.reset_cache()
+
+    def test_montlyreport(self):
+        tracker = Tracker()
+        def add_static(labels, **kwargs):
+            for label in parse_query(labels):
+                s = Statistic(label=label.get('lbl'), category=label.get('cat'),
+                        dom_id=label.get('domid', ''), **kwargs)
+
+                s.save()
+        add_static("us_link1.com:links|es_link2.com:links|us_link2.com:links",
+                counter=5)
+
+        add_static("us_link1.com:links|es_link4.com:links|us_link3.com:links",
+                counter=10)
+
+        report = make_monthly_report_country()
+        def ListEqual(list1, list2):
+            if len(list1) != len(list2):
+                return False
+            for ele in list1:
+                if ele not in list2:
+                    return False
+            return True
+        self.assertTrue(ListEqual(report['us'].keys(), ['link1.com', 'link2.com',
+            'link3.com']))
+        self.assertTrue(ListEqual(report['es'].keys(), ['link4.com',
+            'link2.com']))
+        self.assertEqual(report['us']['link1.com'], 15)
+        self.assertEqual(report['es']['link2.com'], 5)
+        self.assertEqual(report['us']['link3.com'], 10)
+        self.assertEqual(report['fr'], dict())
