@@ -1,0 +1,7 @@
+<table border="1">
+<tr><td>Visits</td><td>Domain</td>
+{% for site in data %}
+    <tr><td>{{ site.1 }}</td><td>{{ site.0 }}</td></tr>
+{% endfor %}
+</table>
+

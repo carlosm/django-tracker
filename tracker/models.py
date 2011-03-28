@@ -2,14 +2,32 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.core.cache import cache
+
 import datetime
+import pickle
 import re
+import operator
 
 from django.db.models import Sum
+from yadayada import countries
+from yadayada.models import SerializedObjectField
+
 TTL = 300 # 5 minutes
 COLLECT_TIME = 120 # every 2 minutes
 
 QUERY_STRING_VALIDATOR = r'[\w.\-\_\|\+ ]+'
+MONTHS_CHOICES = ((1, 'January'),
+ (2, 'February'),
+ (3, 'March'),
+ (4, 'April'),
+ (5, 'May'),
+ (6, 'June'),
+ (7, 'July'),
+ (8, 'August'),
+ (9, 'September'),
+ (10, 'October'),
+ (11, 'November'),
+ (12, 'December'))
 
 
 def parse_query(query):
@@ -112,22 +130,52 @@ def make_daily_report():
         s.save()
 
 
+class CountryStatistic(models.Model):
+    country = models.CharField(max_length=2,
+            choices=countries.iso_name_choices)
+
+    month = models.IntegerField(choices=MONTHS_CHOICES)
+    year = models.IntegerField()
+    data_serialized = SerializedObjectField()
+    tag = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = ('country', 'month', 'year', 'tag')
+
+    def total(self):
+        return sum([obj[1] for obj in self.data_serialized])
+
+
+COUNTRY_STATS_TIME=24 # in hours
 def make_monthly_report_country(category='links', month=None, year=None,
-        countries = [x[0] for x in settings.COUNTRY_PROFILES]):
+        force=False):
     """ Counts for the month all the labels like country_domain
         category: the category to filter.
     """
     today = datetime.datetime.today()
-    s = Statistic.objects.filter(category=category)
-    queries = s.filter(day__month=month or today.month, day__year=year or today.year)
-    report =  {}
-    for country in countries:
-        country_q = queries.filter(label__startswith=country + '_')
-        sites = dict((obj['label'].split('_')[1], 0) for obj in country_q.values('label'))
-        for site in sites.keys():
-            # Sum all days
-            sites[site] = country_q.filter(label__iregex=r'%s_%s' % (country,
-                site)).aggregate(Sum('counter'))['counter__sum']
-        report[country] = sites
-        
-    return report
+    month = month or today.month
+    year = year or  today.year
+
+    data = CountryStatistic.objects.filter(month=month, year=year,
+             tag=category)
+
+    if force or not data:
+        countries = [x[0] for x in settings.COUNTRY_PROFILES]
+        s = Statistic.objects.filter(category=category)
+        queries = s.filter(day__month=month, day__year=year)
+        for country in countries:
+            country_q = queries.filter(label__startswith=country + '_')
+            sites = dict((obj['label'].split('_')[1], 0) for obj in country_q.values('label'))
+            for site in sites.keys():
+                # Sum all days
+                sites[site] = country_q.filter(label__iregex=r'%s_%s' % (country,
+                    site)).aggregate(Sum('counter'))['counter__sum']
+            obj, created = CountryStatistic.objects.get_or_create(country=country, month=month,
+                            year=year, tag=category)
+            obj.data_serialized = sorted(sites.iteritems(), key=operator.itemgetter(1), reverse=True)
+            obj.save()
+            
+        data = CountryStatistic.objects.filter(month=month, year=year,
+             tag=category)
+
+    return data 
