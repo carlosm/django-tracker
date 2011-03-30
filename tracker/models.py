@@ -170,10 +170,11 @@ def make_monthly_report_country(category='links', month=None, year=None,
                 # Sum all days
                 sites[site] = country_q.filter(label__iregex=r'%s_%s' % (country,
                     site)).aggregate(Sum('counter'))['counter__sum']
-            obj, created = CountryStatistic.objects.get_or_create(country=country, month=month,
-                            year=year, tag=category)
-            obj.data_serialized = sorted(sites.iteritems(), key=operator.itemgetter(1), reverse=True)
-            obj.save()
+            if sites:
+                obj, created = CountryStatistic.objects.get_or_create(country=country, month=month,
+                                year=year, tag=category)
+                obj.data_serialized = sorted(sites.iteritems(), key=operator.itemgetter(1), reverse=True)
+                obj.save()
             
         data = CountryStatistic.objects.filter(month=month, year=year,
              tag=category)
