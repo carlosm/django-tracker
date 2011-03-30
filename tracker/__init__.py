@@ -1,5 +1,5 @@
 """Statistic"""
-VERSION = (0, 0, 8)
+VERSION = (0, 0, 9)
 __version__ = '.'.join(map(str, VERSION))
 __author__ = "Batiste Bieler"
 __contact__ = "batiste.bieler@gmail.com"
