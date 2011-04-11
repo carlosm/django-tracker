@@ -10,7 +10,7 @@ import tracker
 import os
 data_dirs = []
 for directory in os.walk('tracker/templates'):
-    data_dirs.append(directory[0][6:] + '/*.*')
+    data_dirs.append(directory[0].split('/',1)[1] + '/*.*')
 
 for directory in os.walk('tracker/media'):
     data_dirs.append(directory[0][6:] + '/*.*')
