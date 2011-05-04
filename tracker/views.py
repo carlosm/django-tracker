@@ -51,3 +51,30 @@ def monthly(request):
             category=category)
 
     return render_to_response('monthly.html', {'report': data})
+
+def crazy_function(month=today.month, category='links', year=today.year):
+    data = make_monthly_report_country(month=month, year=year, category=category)
+    total = 0
+    for country in data:
+        if len(country.data_serialized) > total:
+            total = len(country.data_serialized)
+
+    #header
+    total += 1
+
+    final = ["" for a in range(total)]
+    for country in data:
+        if country.total() < 25:
+            continue
+        final[0] += "%s,%s," % (country.total(), country.country)
+        for nline in range(len(country.data_serialized)):
+            line = "%s,%s," % (country.data_serialized[nline][1], country.data_serialized[nline][0])
+            try:
+                final[nline+1] += line
+            except IndexError:
+                final.append(line)
+        for n in range(nline+2, total):
+            final[n] += ",,"
+    f = open("/tmp/%s-%s.%s.csv" % (category, month, year), 'w')
+    f.write("\n".join(final));f.close()
+
